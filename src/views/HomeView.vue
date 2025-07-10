@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useTasksStore } from '@/stores/tasks';
+import GanttChart from '@/components/GanttChart.vue';
 
 const store = useTasksStore();
 
@@ -60,23 +61,9 @@ function addTask() {
       </button>
     </form>
 
-    <!-- Timeline (Right) -->
-    <div class="flex-1">
-      <h2 class="text-xl font-semibold mb-4">Tasks Timeline</h2>
-      <ul class="relative border-l-2 border-blue-200 pl-6">
-        <li v-for="task in store.tasks" :key="task.id" class="mb-8 last:mb-0">
-          <div
-            class="absolute -left-3.5 w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold shadow"
-          >
-            <span class="text-xs">{{ new Date(task.start).getDate() }}</span>
-          </div>
-          <div class="bg-white rounded-lg shadow p-4 ml-2">
-            <div class="font-semibold text-blue-700">{{ task.name }}</div>
-            <div class="text-xs text-gray-500 mt-1">{{ task.start }} &rarr; {{ task.end }}</div>
-          </div>
-        </li>
-        <li v-if="store.tasks.length === 0" class="text-gray-400 italic">No tasks yet.</li>
-      </ul>
+    <!-- Gantt Chart (Right) -->
+    <div class="flex-1 min-w-0">
+      <GanttChart :tasks="store.tasks" />
     </div>
   </section>
 </template>
