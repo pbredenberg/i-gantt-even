@@ -14,10 +14,56 @@ const comments = ref('');
 const showExportMenu = ref(false);
 function selectExportFormat(format: 'json' | 'csv') {
   showExportMenu.value = false;
-  // Export logic will be implemented later
-  // Placeholder for now
-  alert(`Export as ${format.toUpperCase()} (coming soon)`);
+  const tasks = store.tasks;
+  let dataStr = '';
+  let mimeType = '';
+  let fileExt = '';
+  if (format === 'json') {
+    dataStr = JSON.stringify(tasks, null, 2);
+    mimeType = 'application/json';
+    fileExt = 'json';
+  } else if (format === 'csv') {
+    dataStr = tasksToCSV(tasks);
+    mimeType = 'text/csv';
+    fileExt = 'csv';
+  }
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0,10).replace(/-/g, '');
+  const filename = `tasks-export-${dateStr}.${fileExt}`;
+  downloadFile(dataStr, filename, mimeType);
 }
+
+function tasksToCSV(tasks: any[]): string {
+  if (!tasks.length) return '';
+  // Collect all unique keys for headers
+  const keys = Array.from(new Set(tasks.flatMap(task => Object.keys(task))));
+  const escape = (val: any) => {
+    if (val == null) return '';
+    const str = String(val);
+    if (str.includes('"') || str.includes(',') || str.includes('\n')) {
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+  };
+  const header = keys.join(',');
+  const rows = tasks.map(task => keys.map(k => escape(task[k])).join(','));
+  return [header, ...rows].join('\n');
+}
+
+function downloadFile(data: string, filename: string, mimeType: string) {
+  const blob = new Blob([data], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
+}
+
 
 function addTask() {
   if (!name.value || !start.value || !end.value) return;
