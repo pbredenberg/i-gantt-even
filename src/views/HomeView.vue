@@ -3,6 +3,17 @@ import { ref } from 'vue';
 import { useTasksStore } from '@/stores/tasks';
 import GanttChart from '@/components/GanttChart.vue';
 
+const importFileInput = ref<HTMLInputElement | null>(null);
+function onImportFileChange(event: Event) {
+  // Import logic will be implemented in the next step
+  // Placeholder for now
+  const input = event.target as HTMLInputElement;
+  if (input.files && input.files.length > 0) {
+    alert(`Selected file: ${input.files[0].name}\n(Import logic coming soon)`);
+    input.value = '';
+  }
+}
+
 const store = useTasksStore();
 
 const name = ref('');
@@ -129,7 +140,28 @@ function addTask() {
 
     <!-- Export Tasks Toolbar (Right, above Gantt Chart) -->
     <div class="flex-1 min-w-0 flex flex-col">
-      <div class="flex justify-end mb-4">
+      <div class="flex justify-end mb-4 gap-2">
+        <!-- Import Tasks Button -->
+        <label class="relative inline-block">
+          <input
+            type="file"
+            accept=".json,.csv"
+            class="hidden"
+            @change="onImportFileChange"
+            ref="importFileInput"
+          />
+          <button
+            class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300"
+            type="button"
+            @click="$refs.importFileInput.click()"
+          >
+            Import Tasks
+            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+        </label>
+        <!-- Export Tasks Dropdown -->
         <div class="relative group">
           <button
             class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
