@@ -7,6 +7,7 @@ export interface Task {
    start: string; // ISO date string
    end: string; // ISO date string
    assigneeId?: string | null; // Person ID or null
+   comments?: string;
 }
 
 const STORAGE_KEY = 'tasks';
