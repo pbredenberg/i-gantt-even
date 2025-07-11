@@ -10,6 +10,15 @@ const start = ref('');
 const end = ref('');
 const comments = ref('');
 
+// Export menu UI state
+const showExportMenu = ref(false);
+function selectExportFormat(format: 'json' | 'csv') {
+  showExportMenu.value = false;
+  // Export logic will be implemented later
+  // Placeholder for now
+  alert(`Export as ${format.toUpperCase()} (coming soon)`);
+}
+
 function addTask() {
   if (!name.value || !start.value || !end.value) return;
   store.addTask({ name: name.value, start: start.value, end: end.value, comments: comments.value });
@@ -72,8 +81,39 @@ function addTask() {
       </button>
     </form>
 
-    <!-- Gantt Chart (Right) -->
-    <div class="flex-1 min-w-0">
+    <!-- Export Tasks Toolbar (Right, above Gantt Chart) -->
+    <div class="flex-1 min-w-0 flex flex-col">
+      <div class="flex justify-end mb-4">
+        <div class="relative group">
+          <button
+            class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+            @click="showExportMenu = !showExportMenu"
+            @blur="() => setTimeout(() => { showExportMenu = false }, 150)"
+            type="button"
+          >
+            Export Tasks
+            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div v-if="showExportMenu" class="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded shadow-lg z-10">
+            <button
+              class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700"
+              @click="selectExportFormat('json')"
+              type="button"
+            >
+              Export as JSON
+            </button>
+            <button
+              class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700"
+              @click="selectExportFormat('csv')"
+              type="button"
+            >
+              Export as CSV
+            </button>
+          </div>
+        </div>
+      </div>
       <GanttChart :tasks="store.tasks" />
     </div>
   </section>
