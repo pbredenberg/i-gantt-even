@@ -1,14 +1,44 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { usePeopleStore } from '../stores/people';
+import { useTasksStore } from '../stores/tasks';
+import type { Person } from '../types/person';
 
 interface Task {
-  id: string;
-  name: string;
-  start: string; // ISO date string
-  end: string; // ISO date string
+   id: string;
+   name: string;
+   start: string; // ISO date string
+   end: string; // ISO date string
+   assigneeId?: string | null;
 }
 
 const props = defineProps<{ tasks: Task[] }>();
+
+const peopleStore = usePeopleStore();
+const people = computed(() => peopleStore.people);
+const tasksStore = useTasksStore();
+
+function onAssigneeChange(event: Event, taskId: string) {
+   const select = event.target as HTMLSelectElement;
+   const personId = select.value;
+   if (personId) {
+      tasksStore.assignTask(taskId, personId);
+   } else {
+      tasksStore.unassignTask(taskId);
+   }
+}
+
+function getPersonById(id?: string | null): Person | undefined {
+   if (!id) return undefined;
+   return people.value.find(p => p.id === id);
+}
+
+function getInitials(name: string): string {
+   const parts = name.split(' ');
+   if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? '';
+   return (parts[0][0] ?? '').toUpperCase() + (parts[1][0] ?? '').toUpperCase();
+}
+
 
 const today = new Date();
 const currentMonth = ref(today.getMonth());
@@ -195,12 +225,47 @@ const visibleTasks = computed(() => {
     </div>
     <!-- Tasks rows -->
     <div v-for="task in visibleTasks" :key="task.id" class="flex items-center mb-2">
-      <div class="w-48 pr-2 text-sm font-medium text-gray-700 truncate">{{ task.name }}</div>
+      <div class="w-48 pr-2 text-sm font-medium text-gray-700 truncate flex items-center gap-2">
+        {{ task.name }}
+        <select
+          class="ml-2 border border-gray-300 rounded px-1 py-0.5 text-xs bg-white text-gray-700"
+          :value="task.assigneeId ?? ''"
+          @change="onAssigneeChange($event, task.id)"
+          style="min-width: 6em"
+        >
+          <option value="">Unassigned</option>
+          <option v-for="person in people" :key="person.id" :value="person.id">
+            {{ person.name }}
+          </option>
+        </select>
+      </div>
       <div class="flex-1 relative h-8">
         <div
-          class="absolute h-6 rounded bg-blue-500 flex items-center justify-center text-white text-xs shadow"
+          class="absolute h-6 rounded bg-blue-500 flex items-center justify-center text-white text-xs shadow gap-2 pr-2"
           :style="getBarPosition(task)"
         >
+          <template v-if="task.assigneeId">
+            <span
+              v-if="getPersonById(task.assigneeId)"
+              class="flex items-center mr-1"
+              :title="getPersonById(task.assigneeId)?.name"
+            >
+              <span
+                class="inline-flex items-center justify-center rounded-full text-xs font-bold mr-1"
+                :style="{
+                  backgroundColor: getPersonById(task.assigneeId)?.color ?? '#CBD5E1',
+                  color: '#fff',
+                  width: '1.5em',
+                  height: '1.5em',
+                  minWidth: '1.5em',
+                  minHeight: '1.5em',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.08)'
+                }"
+              >
+                {{ getInitials(getPersonById(task.assigneeId)?.name || '') }}
+              </span>
+            </span>
+          </template>
           {{ new Date(task.start).toLocaleDateString() }} -
           {{ new Date(task.end).toLocaleDateString() }}
         </div>

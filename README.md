@@ -38,6 +38,27 @@ npm run build
 npm run test:unit
 ```
 
+## Task Assignments & People Management
+
+This project supports assigning tasks to people and visualizing assignments in the Gantt timeline.
+
+### People Data
+- People are managed via the Pinia store in `src/stores/people.ts`.
+- Each person has an `id`, `name`, and optional `color`.
+- Demo people are loaded by default; you can add, edit, or remove people programmatically or via future UI.
+
+### Assigning Tasks
+- Each task can be assigned to a person (by their unique ID).
+- Use the Pinia tasks store actions `assignTask(taskId, personId)` and `unassignTask(taskId)` to manage assignments.
+- The `assigneeId` field on a task references a person.
+
+### Timeline Display
+- Assigned tasks show a colored chip with the person's initials on the Gantt chart bar.
+- Hovering over the chip reveals the person's full name.
+- Unassigned tasks display without an avatar chip.
+
+See `src/stores/people.ts` and `src/stores/tasks.ts` for store logic and usage examples.
+
 ### Lint with [ESLint](https://eslint.org/)
 
 ```sh
