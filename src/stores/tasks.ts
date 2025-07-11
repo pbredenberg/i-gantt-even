@@ -2,10 +2,11 @@ import { ref, watch } from 'vue';
 import { defineStore } from 'pinia';
 
 export interface Task {
-  id: string;
-  name: string;
-  start: string; // ISO date string
-  end: string; // ISO date string
+   id: string;
+   name: string;
+   start: string; // ISO date string
+   end: string; // ISO date string
+   assigneeId?: string | null; // Person ID or null
 }
 
 const STORAGE_KEY = 'tasks';
@@ -36,8 +37,23 @@ export const useTasksStore = defineStore('tasks', () => {
     { deep: true },
   );
 
-  return {
-    tasks,
-    addTask,
-  };
+   function assignTask(taskId: string, personId: string): void {
+      const task = tasks.value.find(t => t.id === taskId);
+      if (task) {
+         task.assigneeId = personId;
+      }
+   }
+
+   function unassignTask(taskId: string): void {
+      const task = tasks.value.find(t => t.id === taskId);
+      if (task) {
+         task.assigneeId = null;
+      }
+   }
+   return {
+      tasks,
+      addTask,
+      assignTask,
+      unassignTask
+   };
 });
