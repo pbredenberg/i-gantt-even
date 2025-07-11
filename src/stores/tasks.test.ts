@@ -8,10 +8,17 @@ describe('useTasksStore', () => {
       localStorage.clear();
    });
 
-   it('can add a task', () => {
+   it('can add a task with default progress', () => {
       const store = useTasksStore();
       store.addTask({ name: 'Task', start: '2025-01-01', end: '2025-01-02' });
       expect(store.tasks.length).toBe(1);
+      expect(store.tasks[0].progress).toBe(0);
+   });
+
+   it('can add a task with explicit progress', () => {
+      const store = useTasksStore();
+      store.addTask({ name: 'Task', start: '2025-01-01', end: '2025-01-02', progress: 55 });
+      expect(store.tasks[0].progress).toBe(55);
    });
 
    it('can assign and unassign a task', () => {
