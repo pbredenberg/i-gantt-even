@@ -145,12 +145,103 @@ const visibleTasks = computed(() => {
     }
   });
 });
+import { onMounted, onUnmounted } from 'vue';
+
+
+
+// Keyboard shortcut map for navigation and zoom
+// Key: shortcut string (e.g., 'ArrowLeft', '+', 'PageUp')
+// Value: function to execute
+const shortcutMap: Record<string, () => void> = {
+  ArrowLeft: () => setPeriodOffset(-1), // Previous period
+  ArrowRight: () => setPeriodOffset(1), // Next period
+  PageUp: () => setPeriodOffset(-3),    // Jump back (3 periods for quarter/year)
+  PageDown: () => setPeriodOffset(3),   // Jump forward
+  Home: () => {
+    currentMonth.value = 0;
+    // Optionally, scroll to start of year
+  },
+  End: () => {
+    currentMonth.value = 11;
+    // Optionally, scroll to end of year
+  },
+  '+': () => {
+    if (zoomLevel.value === 'year') zoomLevel.value = 'quarter';
+    else if (zoomLevel.value === 'quarter') zoomLevel.value = 'month';
+  },
+  '-': () => {
+    if (zoomLevel.value === 'month') zoomLevel.value = 'quarter';
+    else if (zoomLevel.value === 'quarter') zoomLevel.value = 'year';
+  },
+  '0': () => {
+    zoomLevel.value = 'month';
+  },
+};
+
+function isInputElement(element: Element | null): boolean {
+  if (!element) return false;
+  const tag = element.tagName;
+  return (
+    tag === 'INPUT' ||
+    tag === 'TEXTAREA' ||
+    tag === 'SELECT' ||
+    (element as HTMLElement).isContentEditable
+  );
+}
+
+function handleKeydown(e: KeyboardEvent) {
+  // Do not handle if focus is in an input/textarea/select or editable
+  if (isInputElement(document.activeElement)) return;
+  const fn = shortcutMap[e.key];
+  if (fn) {
+    e.preventDefault();
+    fn();
+  }
+}
+
+
+onMounted(() => {
+  // Always listen for keyboard shortcuts globally
+  window.addEventListener('keydown', handleKeydown);
+});
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown);
+});
+
 </script>
 
 <template>
-  <div class="overflow-x-auto bg-white rounded-lg shadow p-4">
+  <div
+    class="overflow-x-auto bg-white rounded-lg shadow p-4"
+  >
+
     <!-- Controls -->
     <div class="flex items-center border-b border-gray-200 mb-0 gap-4">
+      <!-- Keyboard Shortcuts Help Icon -->
+      <div class="relative group" style="width: 24px; height: 24px;">
+        <span
+          class="inline-block w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-center font-bold cursor-pointer"
+          tabindex="0"
+          aria-label="Show keyboard shortcuts"
+        >
+          ?
+        </span>
+        <div
+          class="absolute left-8 top-0 z-10 w-64 p-3 bg-white border border-gray-300 rounded shadow-lg text-xs text-gray-800 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto"
+          role="tooltip"
+        >
+          <strong class="block mb-1">Keyboard Shortcuts</strong>
+          <ul class="list-disc pl-4">
+            <li><kbd>←</kbd>/<kbd>→</kbd>: Move period left/right</li>
+            <li><kbd>PageUp</kbd>/<kbd>PageDown</kbd>: Jump 3 periods</li>
+            <li><kbd>Home</kbd>/<kbd>End</kbd>: Go to start/end of year</li>
+            <li><kbd>-</kbd>: Zoom out (month → quarter → year)</li>
+            <li><kbd>+</kbd>: Zoom in (year → quarter → month)</li>
+            <li><kbd>0</kbd>: Reset zoom to month</li>
+          </ul>
+          <span class="block mt-2 text-gray-500">Shortcuts work unless focus is in an input or editable field.</span>
+        </div>
+      </div>
       <div class="w-48"></div>
       <div class="flex-1 flex items-center justify-center gap-2">
         <button @click="setPeriodOffset(-1)" class="px-2 py-1 rounded hover:bg-gray-100 text-lg">
