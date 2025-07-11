@@ -8,13 +8,15 @@ const store = useTasksStore();
 const name = ref('');
 const start = ref('');
 const end = ref('');
+const comments = ref('');
 
 function addTask() {
   if (!name.value || !start.value || !end.value) return;
-  store.addTask({ name: name.value, start: start.value, end: end.value });
+  store.addTask({ name: name.value, start: start.value, end: end.value, comments: comments.value });
   name.value = '';
   start.value = '';
   end.value = '';
+  comments.value = '';
 }
 </script>
 
@@ -52,6 +54,15 @@ function addTask() {
             required
           />
         </div>
+      </div>
+      <div class="flex-1">
+        <label class="block text-xs mb-1">Comments</label>
+        <textarea
+          v-model="comments"
+          placeholder="Optional comments"
+          class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200 transition bg-white w-full resize-none"
+          rows="2"
+        />
       </div>
       <button
         type="submit"
