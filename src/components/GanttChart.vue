@@ -364,6 +364,12 @@ onUnmounted(() => {
           {{ new Date(task.end).toLocaleDateString() }}
         </div>
       </div>
+      <RouterLink
+        :to="{ name: 'task-edit', params: { id: task.id } }"
+        class="ml-4 text-blue-600 hover:text-blue-800 text-sm"
+      >
+        Edit
+      </RouterLink>
     </div>
     <div v-if="visibleTasks.length === 0" class="text-gray-400 italic mt-4">No tasks yet.</div>
   </div>
