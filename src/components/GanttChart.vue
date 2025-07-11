@@ -240,6 +240,103 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown);
 });
 
+// --- Drag-and-drop logic for task bars ---
+const draggedTaskId = ref<string | null>(null);
+const dragStartX = ref<number | null>(null);
+const dragInitialStart = ref<Date | null>(null);
+const dragInitialEnd = ref<Date | null>(null);
+const dragDeltaDays = ref<number>(0);
+const dragBarRef = ref<HTMLElement | null>(null);
+const wasDragged = ref<boolean>(false); // Track if a drag occurred
+
+function handleBarClick(task: Task) {
+   if (!wasDragged.value) {
+      selectedTask.value = task;
+   }
+}
+
+
+function onBarPointerDown(event: PointerEvent, task: Task) {
+   wasDragged.value = false; // Reset on pointer down
+   if (event.button !== 0 && event.pointerType !== 'touch') return;
+   draggedTaskId.value = task.id;
+   dragStartX.value = event.clientX;
+   dragInitialStart.value = new Date(task.start);
+   dragInitialEnd.value = new Date(task.end);
+   dragDeltaDays.value = 0;
+   dragBarRef.value = event.target as HTMLElement;
+   window.addEventListener('pointermove', onBarPointerMove);
+   window.addEventListener('pointerup', onBarPointerUp, { once: true });
+   event.preventDefault();
+}
+
+function onBarPointerMove(event: PointerEvent) {
+   if (!draggedTaskId.value || dragStartX.value == null || !dragInitialStart.value || !dragInitialEnd.value) return;
+   const bar = dragBarRef.value;
+   if (!bar) return;
+   let daysInPeriod = 1;
+   let pxPerDay = 1;
+   if (zoomLevel.value === 'month') {
+      daysInPeriod = timeline.value.length;
+      pxPerDay = bar.parentElement?.offsetWidth ? bar.parentElement.offsetWidth / daysInPeriod : 1;
+   } else if (zoomLevel.value === 'quarter') {
+      daysInPeriod = timeline.value.reduce((sum, m) => sum + m.daysInMonth, 0);
+      pxPerDay = bar.parentElement?.offsetWidth ? bar.parentElement.offsetWidth / daysInPeriod : 1;
+   } else if (zoomLevel.value === 'year') {
+      daysInPeriod = timeline.value.reduce((sum, m) => sum + m.daysInMonth, 0);
+      pxPerDay = bar.parentElement?.offsetWidth ? bar.parentElement.offsetWidth / daysInPeriod : 1;
+   }
+   const dx = event.clientX - dragStartX.value;
+   const daysMoved = Math.round(dx / pxPerDay);
+   dragDeltaDays.value = daysMoved;
+   if (Math.abs(dx) > 3) {
+      wasDragged.value = true;
+   }
+}
+
+function onBarPointerUp() {
+   // Always reset wasDragged after pointer up
+   setTimeout(() => { wasDragged.value = false }, 0);
+   if (!draggedTaskId.value || dragDeltaDays.value === 0 || !dragInitialStart.value || !dragInitialEnd.value) {
+      resetDrag();
+      return;
+   }
+   const newStart = new Date(dragInitialStart.value);
+   newStart.setDate(newStart.getDate() + dragDeltaDays.value);
+   const newEnd = new Date(dragInitialEnd.value);
+   newEnd.setDate(newEnd.getDate() + dragDeltaDays.value);
+   const task = tasksStore.tasks.find(t => t.id === draggedTaskId.value);
+   if (task) {
+      task.start = newStart.toISOString().slice(0, 10);
+      task.end = newEnd.toISOString().slice(0, 10);
+   }
+   resetDrag();
+}
+
+function resetDrag() {
+   draggedTaskId.value = null;
+   dragStartX.value = null;
+   dragInitialStart.value = null;
+   dragInitialEnd.value = null;
+   dragDeltaDays.value = 0;
+   dragBarRef.value = null;
+   window.removeEventListener('pointermove', onBarPointerMove);
+}
+// --- End drag-and-drop logic ---
+
+// --- Preview bar for drag-and-drop ---
+const previewBarPosition = computed(() => {
+   if (!draggedTaskId.value || dragDeltaDays.value === 0) return null;
+   const task = tasksStore.tasks.find(t => t.id === draggedTaskId.value);
+   if (!task) return null;
+   const start = new Date(task.start);
+   const end = new Date(task.end);
+   start.setDate(start.getDate() + dragDeltaDays.value);
+   end.setDate(end.getDate() + dragDeltaDays.value);
+   return getBarPosition({ ...task, start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) });
+});
+// --- End preview bar logic ---
+
 </script>
 
 <template>
@@ -333,10 +430,19 @@ onUnmounted(() => {
         </select>
       </div>
       <div class="flex-1 relative h-8">
+        <!-- Drag preview bar -->
+        <div
+          v-if="draggedTaskId === task.id && previewBarPosition"
+          class="absolute h-6 rounded gantt-bar-preview"
+          :style="previewBarPosition"
+          aria-hidden="true"
+        ></div>
         <div
           class="absolute h-6 rounded bg-blue-500 flex items-center justify-center text-white text-xs shadow gap-2 pr-2"
+          :class="{ 'dragging-bar': draggedTaskId === task.id }"
           :style="getBarPosition(task)"
-          @click="selectedTask = task"
+          @pointerdown="onBarPointerDown($event, task)"
+          @click="handleBarClick(task)"
         >
           <template v-if="task.assigneeId">
             <span
