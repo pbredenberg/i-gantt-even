@@ -10,6 +10,7 @@ interface Task {
    start: string; // ISO date string
    end: string; // ISO date string
    assigneeId?: string | null;
+   comments?: string;
 }
 
 const props = defineProps<{ tasks: Task[] }>();
