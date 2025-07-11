@@ -13,7 +13,8 @@ interface Task {
    comments?: string;
 }
 
-const props = defineProps<{ tasks: Task[] }>();
+const props = defineProps<{ tasks: Task[] }>(),
+      selectedTask = ref<Task | null>(null);
 
 const peopleStore = usePeopleStore();
 const people = computed(() => peopleStore.people);
@@ -244,6 +245,7 @@ const visibleTasks = computed(() => {
         <div
           class="absolute h-6 rounded bg-blue-500 flex items-center justify-center text-white text-xs shadow gap-2 pr-2"
           :style="getBarPosition(task)"
+          @click="selectedTask = task"
         >
           <template v-if="task.assigneeId">
             <span
@@ -273,5 +275,58 @@ const visibleTasks = computed(() => {
       </div>
     </div>
     <div v-if="visibleTasks.length === 0" class="text-gray-400 italic mt-4">No tasks yet.</div>
+  </div>
+
+  <!-- Task Details Modal -->
+  <div v-if="selectedTask" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+      <button @click="selectedTask = null" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
+      <h3 class="text-xl font-bold mb-4">Task Details</h3>
+      <div class="mb-3">
+        <span class="font-medium">Task Name:</span>
+        <span class="ml-2 text-gray-700">{{ selectedTask.name }}</span>
+      </div>
+      <div class="mb-3 flex items-center gap-2">
+        <span class="font-medium">Assignee:</span>
+        <template v-if="selectedTask.assigneeId && getPersonById(selectedTask.assigneeId)">
+          <span
+            class="inline-flex items-center justify-center rounded-full text-xs font-bold mr-1"
+            :style="{
+              backgroundColor: getPersonById(selectedTask.assigneeId)?.color ?? '#CBD5E1',
+              color: '#fff',
+              width: '1.5em',
+              height: '1.5em',
+              minWidth: '1.5em',
+              minHeight: '1.5em',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.08)'
+            }"
+          >
+            {{ getInitials(getPersonById(selectedTask.assigneeId)?.name || '') }}
+          </span>
+          <span class="text-gray-700">{{ getPersonById(selectedTask.assigneeId)?.name }}</span>
+        </template>
+        <template v-else>
+          <span class="italic text-gray-400">Unassigned</span>
+        </template>
+      </div>
+      <div class="mb-3 text-sm text-gray-600">
+        <span class="font-medium">Start Date:</span>
+        <span class="ml-2">{{ new Date(selectedTask.start).toLocaleDateString() }}</span>
+      </div>
+      <div class="mb-3 text-sm text-gray-600">
+        <span class="font-medium">End Date:</span>
+        <span class="ml-2">{{ new Date(selectedTask.end).toLocaleDateString() }}</span>
+      </div>
+      <div class="mb-3 text-sm text-gray-600">
+        <span class="font-medium">Task ID:</span>
+        <span class="ml-2 font-mono text-xs text-gray-500">{{ selectedTask.id }}</span>
+      </div>
+      <div class="mb-2">
+        <span class="font-medium">Comments:</span>
+        <div class="mt-1 p-2 bg-gray-50 rounded border border-gray-200 min-h-[2em] text-gray-700 whitespace-pre-line">
+          {{ selectedTask.comments || 'No comments.' }}
+        </div>
+      </div>
+    </div>
   </div>
 </template>
