@@ -11,6 +11,7 @@ interface Task {
    end: string; // ISO date string
    assigneeId?: string | null;
    comments?: string;
+   progress: number;
 }
 
 const props = defineProps<{ tasks: Task[] }>(),
@@ -338,30 +339,55 @@ onUnmounted(() => {
           :style="getBarPosition(task)"
           @click="selectedTask = task"
         >
-          <template v-if="task.assigneeId">
-            <span
-              v-if="getPersonById(task.assigneeId)"
-              class="flex items-center mr-1"
-              :title="getPersonById(task.assigneeId)?.name"
-            >
+          <div
+            class="absolute left-0 top-0 h-full rounded bg-green-400 opacity-60"
+            :style="{ width: `${typeof task.progress === 'number' ? task.progress : 0}%`, zIndex: 1, transition: 'width 0.3s' }"
+            role="progressbar"
+            :aria-valuenow="typeof task.progress === 'number' ? task.progress : 0"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            :aria-label="`Task progress: ${typeof task.progress === 'number' ? task.progress : 0}%`"
+          ></div>
+          <div class="relative z-10 flex items-center w-full h-full px-2">
+            <template v-if="task.assigneeId">
               <span
-                class="inline-flex items-center justify-center rounded-full text-xs font-bold mr-1"
-                :style="{
-                  backgroundColor: getPersonById(task.assigneeId)?.color ?? '#CBD5E1',
-                  color: '#fff',
-                  width: '1.5em',
-                  height: '1.5em',
-                  minWidth: '1.5em',
-                  minHeight: '1.5em',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.08)'
-                }"
+                v-if="getPersonById(task.assigneeId)"
+                class="flex items-center mr-1"
+                :title="getPersonById(task.assigneeId)?.name"
               >
-                {{ getInitials(getPersonById(task.assigneeId)?.name || '') }}
+                <span
+                  class="inline-flex items-center justify-center rounded-full text-xs font-bold mr-1"
+                  :style="{
+                    backgroundColor: getPersonById(task.assigneeId)?.color ?? '#CBD5E1',
+                    color: '#fff',
+                    width: '1.5em',
+                    height: '1.5em',
+                    minWidth: '1.5em',
+                    minHeight: '1.5em',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.08)'
+                  }"
+                >
+                  {{ getInitials(getPersonById(task.assigneeId)?.name || '') }}
+                </span>
               </span>
+            </template>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              :value="typeof task.progress === 'number' ? task.progress : 0"
+              @input="(e) => tasksStore.setTaskProgress(task.id, Number((e.target as HTMLInputElement).value))"
+              class="mx-2 w-24 h-2 accent-green-500 cursor-pointer"
+              aria-label="Set progress"
+            />
+            <span class="ml-1 font-semibold">
+              {{ typeof task.progress === 'number' ? task.progress : 0 }}%
             </span>
-          </template>
-          {{ new Date(task.start).toLocaleDateString() }} -
-          {{ new Date(task.end).toLocaleDateString() }}
+            <span class="ml-2">
+              {{ new Date(task.start).toLocaleDateString() }} -
+              {{ new Date(task.end).toLocaleDateString() }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
